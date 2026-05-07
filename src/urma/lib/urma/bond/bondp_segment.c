@@ -180,6 +180,12 @@ urma_status_t bondp_unregister_seg(urma_target_seg_t *target_seg)
 static bondp_ret_t import_p_tseg(bondp_context_t *bdp_ctx, bondp_seg_cfg_t *seg_cfg,
     int local_idx, int target_idx)
 {
+    if (local_idx < 0 || local_idx >= URMA_UBAGG_DEV_MAX_NUM ||
+        target_idx < 0 || target_idx >= URMA_UBAGG_DEV_MAX_NUM) {
+        URMA_LOG_INFO("BONDP import seg idx out of range: local %d target %d\n", local_idx, target_idx);
+        return BONDP_SKIP;
+    }
+
     if (bdp_ctx->p_ctxs[local_idx] == NULL) {
         URMA_LOG_INFO("BONDP import seg p_ctxs is NULL: %d\n", local_idx);
         return BONDP_SKIP;
@@ -265,9 +271,13 @@ static bondp_ret_t import_matrix_port_seg_by_direct_route(bondp_context_t *bdp_c
     for (int i = 0; i < IODIE_NUM; i++) {
         for (int j = 0; j < PORT_NUM; j++) {
             int local_port = IODIE_NUM + PORT_NUM * i + j;
-            int target_port = IODIE_NUM + PORT_NUM * i + bondp_seg_cfg->udata_out->ports[i][j];
+            int mapped_port = bondp_seg_cfg->udata_out->ports[i][j];
+            int target_port = IODIE_NUM + PORT_NUM * i + mapped_port;
 
-            if (local_port >= bdp_ctx->dev_num ||
+            if (mapped_port < 0 || mapped_port >= PORT_NUM ||
+                local_port >= bdp_ctx->dev_num ||
+                local_port >= URMA_UBAGG_DEV_MAX_NUM ||
+                target_port < 0 || target_port >= URMA_UBAGG_DEV_MAX_NUM ||
                 bdp_ctx->p_ctxs[local_port] == NULL) {
                 URMA_LOG_DEBUG("BONDP skip route (%d %d)\n", local_port, target_port);
                 continue;
