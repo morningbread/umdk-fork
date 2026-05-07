@@ -916,11 +916,15 @@ static int import_direct_route(bondp_context_t *bdp_ctx, bondp_target_jetty_t *b
     for (int i = 0; i < IODIE_NUM; i++) {
         for (int j = 0; j < PORT_NUM; j++) {
             int local_port = IODIE_NUM + PORT_NUM * i + j;
-            int target_port = IODIE_NUM + PORT_NUM * i + rvjetty_info->ports[i][j];
+            int mapped_port = rvjetty_info->ports[i][j];
+            int target_port = IODIE_NUM + PORT_NUM * i + mapped_port;
 
-            if (local_port >= bdp_ctx->dev_num ||
+            if (mapped_port < 0 || mapped_port >= PORT_NUM ||
+                local_port >= bdp_ctx->dev_num ||
+                local_port >= URMA_UBAGG_DEV_MAX_NUM ||
                 bdp_ctx->p_ctxs[local_port] == NULL ||
-                target_port >= rvjetty_info->dev_num ||
+                target_port < 0 || target_port >= rvjetty_info->dev_num ||
+                target_port >= URMA_UBAGG_DEV_MAX_NUM ||
                 is_empty_eid(&rvjetty_info->slave_id[target_port].eid)) {
                 URMA_LOG_DEBUG("BONDP skip route (%d %d)\n", local_port, target_port);
                 continue;
